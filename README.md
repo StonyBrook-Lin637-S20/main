@@ -21,7 +21,7 @@ Giving a few wrong answers is okay, but if you feel that you do not know enough 
 Relevant materials are suggested in the [readings repository][readings] (access restricted to enrolled students).
 
 In addition, you will have to use Python and possibly markdown and/or LaTeX at various points during this course.
-The [link list](#link-list) at the end of this document has some useful tutorials.
+The [link list](#useful-links) at the end of this document has some useful tutorials.
 
 If you don't want to deal with installing Python and git, you can download our [virtual machine][vm] that already comes with everything preconfigured.
 Access is restricted to Stony Brook affiliates.
@@ -40,16 +40,12 @@ Homeworks
 
 Each homework will be hosted in its own private repository.
 Only course participants have access to these repositories.
-
-- [Homework 0](../../../homework0): no due date
-- [Homework 1](../../../homework1): due Wed, Feb 07 @ 23:59pm
-- [Homework 2](../../../homework2): due Sat, Feb 17 @ 23:59pm
-- [Homework 3](../../../homework3): due Sat, Feb 24 @ 23:59pm
-- [Homework 4](../../../homework4): due Sat, Mar 24 @ 23:59pm
-- [Homework 5](../../../homework5): due Wed, Apr 04 @ 23:59pm
+Each assignment will be announced in GitHub's issue tracker.
+I recommend that you [watch this repository](https://help.github.com/en/github/receiving-notifications-about-activity-on-github/watching-and-unwatching-repositories) and configure GitHub to email you update notifications.
 
 
-Compilation Instructions
+
+Compilation instructions
 ------------------------
 
 If you want to compile the lecture notes yourself, or use them as the basis for your own course, carefully follow the steps below.
@@ -59,20 +55,17 @@ If you want to compile the lecture notes yourself, or use them as the basis for 
     - the Python `pygments` package (required by minted)
 
 2.  Clone the repository via `git`, or download and extract the [zip file](../../archive/master.zip).
-    Note that the project folder will also contain an empty _build_ folder, which is used for temporary files to speed up compilation.
+    Note that the project folder will also contain an empty `build` folder, which is used for temporary files to speed up compilation.
 
 3.  Use the standard `tex --> pdf` compilation tool chain (**not** `tex --> dvi --> ps --> pdf`), but make sure that `pdflatex` is run with the parameters `--shell-escape` and `--etex`.
 
 
-Link List
----------
+Useful links
+------------
 
 ### Using git
 
 - I highly recommend github's [interactive git tutorial](https://try.github.io).
-- [Github app for Windows](http://windows.github.com); supports only Windows 7 or later
-- [Github app for Mac](http://mac.github.com); supports only OS X 10.9 or later
-- List of alternative [GUI clients for git](http://git-scm.com/downloads/guis)
 - Tutorials for using [git via the command line](https://www.atlassian.com/git/tutorials)
 - Official [documentation for git](http://git-scm.com/doc)
 
@@ -85,7 +78,6 @@ Link List
 ### LaTeX
 
 - [Overleaf](https://www.overleaf.com/) (formerly writeLaTeX) is an online LaTeX editor with live preview
-- List of [commonly used math symbols](http://web.ift.uib.no/Teori/KURS/WRK/TeX/symALL.html)
 - Andrew Roberts' [Getting to Grips with LaTeX](http://www.andy-roberts.net/writing/latex)
 
 ### Python
@@ -100,5 +92,5 @@ Link List
 [readings]: ../../../readings
 [sbu]: http://www.stonybrook.edu
 [survey]: https://testmoz.com/432409
-[syllabus]: ../../blob/master/pdf/00_syllabus.pdf?raw=true
+[syllabus]: ../../blob/master/syllabus/syllabus.pdf?raw=true
 [vm]: https://drive.google.com/file/d/1ti5dhXh1ZzHKYa-dCHZtzI7WIapWPr2V/view?usp=sharing
