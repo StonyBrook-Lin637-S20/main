@@ -19,5 +19,8 @@
 !code/**/
 !pdf/
 !pdf/*.pdf
+!syllabus/
+!syllabus/*.md
+!syllabus/*.pdf
 !build/
 !build/**/
