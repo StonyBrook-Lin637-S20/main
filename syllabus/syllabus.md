@@ -13,7 +13,7 @@ Computational Linguistics 2
 | Email         | [coursenumber]@thomasgraf.net   |
 | Office hours  | T 1:00--2:00                    |
 |               | R 1:00--2:00                    |
-|               | F tbd                           |
+|               | F 11:30--12:30                  |
 | Office        | SBS N-249                       |
 
 Course outline
