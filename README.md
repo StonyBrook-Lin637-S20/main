@@ -24,8 +24,6 @@ In addition, you will have to use Python and possibly markdown and/or LaTeX at v
 The [link list](#useful-links) at the end of this document has some useful tutorials.
 
 If you don't want to deal with installing Python and git, you can download our [virtual machine][vm] that already comes with everything preconfigured.
-Access is restricted to Stony Brook affiliates.
-See the section below for details.
 
 
 Readings
@@ -93,4 +91,4 @@ Useful links
 [sbu]: http://www.stonybrook.edu
 [survey]: https://testmoz.com/432409
 [syllabus]: ../../blob/master/syllabus/syllabus.pdf?raw=true
-[vm]: https://drive.google.com/file/d/1ti5dhXh1ZzHKYa-dCHZtzI7WIapWPr2V/view?usp=sharing
+[vm]: https://virtualmachines.thomasgraf.net

@@ -185,7 +185,7 @@ This class uses some online tools to facilitate homework collaboration and submi
 - *What you'll need:*
   A GitHub account (the free tier is enough) and a way of uploading your code to a GitHub repository.
   Linux users can install git via the command line.
-  Windows and Mac users should download and install the provided virtual machine image.
+  Windows and Mac users should download and install the provided [virtual machine image](https://virtualmachines.thomasgraf.net).
   Please do not use the GitHub app, its GUI makes things more complicated than just using the command line directly.
 
 ### Homework feedback and discussion
