@@ -6,8 +6,10 @@
 !*.clo
 !*.cls
 !*.dot
+!*.jpg
 !*.latexmain
 !*.ova
+!*.png
 !*.py
 !*.sty
 !*.tex
