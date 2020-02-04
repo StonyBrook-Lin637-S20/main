@@ -1,5 +1,5 @@
-\chapter{Implementing Phonology as a List}
-\label{cha:ListPhonology}
+\chapter{Implementing phonology as a list}
+\label{cha:listphonology}
 
 Linguists distinguish many different aspects of language:
 %
@@ -23,7 +23,8 @@ First, phonetics involves a lot of non-discrete math that is fairly demanding fo
 Similarly, syntax, semantics and pragmatics use fairly complicated linguistic formalisms.
 This leaves us with phonology and morphology, and since the two are very similar from a computational perspective (many computational models even handle them both at the same time), we pick the one that linguistics students usually have had greater exposure to: phonology.
 
-\section{A Simple Phonology Problem}
+\section{A simple phonology problem}
+\label{sec:listphonology_problems}
 
 Word-final devoicing is a process that has been extensively studied by phonologists.
 As its name implies, final devoicing turns voiced consonants (\textipa{/b/}, \textipa{/d/}, \textipa{/g/}, \textipa{/z/}, \ldots) that occur at the end of a word into their voiceless counterparts (\textipa{/p/}, \textipa{/t/}, \textipa{/k/}, \textipa{/s/}, \ldots).
@@ -43,6 +44,7 @@ Final devoicing is attested in a rich variety of languages, from Indo-European o
         \bottomrule
     \end{tabular}
 \end{center}
+% fixme: use IPA, find Wolof data
 
 What kind of computational resources must a native speaker possess that has successfully learned this process for their language and can apply it correctly during speech?
 As innocent as this question may seem, it is actually very difficult to answer because it is unclear what kind of computational process underlies word-final devoicing.
@@ -63,7 +65,7 @@ It might well turn out that speakers are actually doing something more complicat
 Arguably the simplest conceivable solution is that there are no phonological processes at all, speakers simply memorize all the output forms.
 %
 \begin{description}
-    \item[List Phonology Model] A speaker's knowledge of phonology is fully captured by a list of pronunciations.
+    \item[Listedness model of phonology] A speaker's knowledge of phonology is fully captured by a list of pronunciations.
 \end{description}
 %
 This would reduce phonology to a long list of fully inflected words and speakers simply pick that item from the list that they want to pronounce.
@@ -72,124 +74,39 @@ Such a solution is certainly simple, and it has been used in NLP in the past.
 After all it only require a few people to go through a dictionary of English and write down the pronunciation for each word and all its fully inflected variants (e.g.\ \emph{go}, \emph{goes}, \emph{went}, \emph{gone}, \emph{going}).
 Simple as it may be, though, the important question for us whether it is empirically adequate.
 
-\section{Storage and Retrieval Speed}
 
-\subsection{Lists, Hash Tables, and Python Dictionaries}
+\section{The Listedness model is inadequate}
+\label{sec:listphonology_inadequacy}
 
-Let's first think about whether speakers could possibly have such a list stored somewhere in their brain.
-Psychologists and neuroscientists still know very little about how the brain stores information, so for the sake of argument we will look at this through the lens of Python data structures.
-Python has lists as a data type, so we could instantiate a phonology list for a given language, say German.
-%
-\Note{This list uses the \href{http://www.kirshenbaum.net/IPA/ascii-ipa.pdf}{sci.lang ASCII transliteration} of IPA, which is easier to type and can be used on systems without unicode support.}
-\begin{center}
-    \begin{pythoncode}
-        german_phonology = ['Ra:t', 'Re:dV"', 'blint', 'blind@',\
-                            'iC', 'du:', 'EV"', 'si:', 'Es']
-    \end{pythoncode}
-\end{center}
-%
-The problem is that items in a list are not always easy to retrieve.
-If you know the index of an item, you can immediately access it via said index.
-%
-\begin{center}
-    \begin{pythoncode}
-        german_phonology[4]
-    \end{pythoncode}
-\end{center}
-%
-But with long lists you do not know which position a specific item occupies.
-In order to retrieve this item, then, one has to search through the entire list until one finds the correct item.
-So the longer the list, the longer it takes to find an item towards its end.
-If we simply search through the list from left to right, finding the $n$-th item takes $n$ steps.
-There are more efficient methods such as the binary search algorithm that we looked at in Lecture~\ref{cha:Formal}, but with those the search time still increases with the size of the list, just not as rapidly.
+\subsection{A failed argument about storage and retrieval}
+\label{ssec:listphonology_inadequacy_storage}
 
-This does not at all seem plausible from a psycholinguistic perspective.
-Experiments have shown that frequent words are retrieved more quickly than rarer ones, but the retrieval speed is independent of overall vocabulary size (see \citealt{Jurafsky03} and references therein).
-Having a larger vocabulary does not mean that it takes you longer to retrieve specific words, but this is what the current list implementation predicts.
-But this might be just a problem at the algorithmic level --- something that could be fixed by changing to a different data structure while maintaining the claim that on the computational level phonology is accurately described as a process of memorization and retrieval of word pronunciations.
+Your first gut reaction may be that the Listedness model cannot possibly be right because it would require storing an enormous amount of information.
+One can certainly construct a formal argument along those lines, but as we will see it is a weak one because if confuses specification and implementation.
 
-Quick access and storage of information is crucial in various applications, and thus it is no surprise that computer scientists have developed data structures which allow any given item to be stored and retrieved in constant time.
-A particularly popular one is the \emph{hash table}.
-The basic idea behind a hash table is that the problem with lists is the arbitrary and volatile connection between an item in a list and its index.
-Not only is there no particular reason why \emph{blint} has index $2$ and \emph{ea} index $1$, their indices can also change, e.g. if elements are added to the list or if the entries in the list are reordered.
-In a hash table, each entry has a key that uniquely identifies it, and this key is translated into the correct index via a \emph{hash function}.
-Hence the order of elements in a hash table is irrelevant for their retrieval.
-As long as we have the key, lookup takes only the amount of time required to compute the index from the key.
-\Note{This is a very simplified presentation of hash tables, see Sec.~1.5 of~\citet{DasguptaEtAl06} for some very useful details.}
-A smart hash function can do this in constant time for any given key irrespective of how many keys there are or how long they are --- the conversion from indices to keys always takes a fixed number of steps.
-It follows that lookup in hash table takes constant time, much more efficient than the linear time lookup in a list.
+Let's first try to fully spell out why storage might be a problem.
+Suppose that an English speaker knows around 50,000 words, each one of which has approximately 2 different pronunciation forms.
+For instance, the verb \emph{go} require memorizing the pronunciations of 
+\emph{go}, \emph{goes}, \emph{went}, \emph{gone}, and \emph{going},
+the noun \emph{cow} also has a plural \emph{cows},
+and an adjective like \emph{red} only has that one pronounced form.
+Let us assume furthermore that the average word has 8 sounds, and that there are 64 different sounds --- both are vast overestimates.
+If there are 64 distinct sounds, a single sound takes 6 bits to store.
+Overall, then, our list would require at least
+$
+50,000
+\times
+2
+\times
+8
+\times
+6
+=
+4,800,000
+$
+bits of storage, which is approximately 585 kilobytes.
 
-\begin{techinfo}[Asymptotic Notation]
-    Computer scientists measure performance in terms of \emph{asymptotic worst-case complexity}.
-    That is to say, how long does it take to solve a given task if everything goes wrong that could go wrong within the specified parameters of the problem (e.g.\ the item we are looking for is at the very end of the list) and if there are no restrictions on the size of the input (e.g.\ there is no limit on how many items a list may contain).
-
-    Asymptotic worst-case complexity is expressed via the ``Big $O$'' notation.
-    If an algorithm has time complexity $O(n^3)$, this means that it takes at most $n^3$ steps for it to find a solution (or determine that there is no solution), where $n$ is the size of the input problem (e.g.\ the number of items in a list).
-    The Big $O$ notation ignores parameters whose impact on complexity diminishes as the size of the problem approaches infinity.
-    For instance, when running a search algorithm you wrote in Python there is a fixed cost for reading in the actual code you wrote.
-    But since this only takes a fixed amount of steps, say $5$, that cost is completely negligible once we deal with lists containing millions of items --- it does not matter whether your computer has to do 3 million computations or 3 million and $5$.
-
-    Without going into too much detail, we can rank an algorithm's efficiency according to which of the following classes it belongs to:
-    %
-    \begin{description}
-        \item[constant]
-            solving the problem always takes a fixed number of steps\\
-            e.g.\ $O(5) = O(1)$
-        \item[logarithmic]
-            the amount of time is logarithmically bounded by the size of the input\\
-            e.g.\ $O(2 \log n + 5) = O(2 \log n) = O(\log n)$
-        \item[linear]
-            the amount of time scales linearly with the size of the input\\
-            e.g.\ $O(5n \log n + 5) = O(5n) = O(n)$
-        \item[polynomial]
-            the amount of time is bounded by a polynomial of the input (in simpler terms: a function where $n$ has an exponent)\\
-            e.g.\ $O(8n^4 + 3n^2 + 5n \log n + 5) = O(8n^4) = O(n^4)$
-        \item[exponential]
-            the amount of time grows exponentially with input size\\
-            e.g.\ $O(4^n + 2^n + 8n^4 + 3n^2 + 5n \log n + 5) = O(4^n)$
-        \item[factorial]
-            the amount of time grows factorially with the input, where the factorial of $n$ is $n! \is n \mult (n - 1) \mult \cdots \mult 2 \mult 1$ (for instance, $4! = 4 \mult 3 \mult 2 \mult 1$)\\
-            e.g.\ $O(8n! \mult n^{10^{100}}) = O(8n!) = O(n!)$
-    \end{description}
-    %
-    In practice, problems that can be solved in polynomial time are considered efficiently solvable.
-    In the worst case, you may have to wait a few years for hardware to catch up, but since computing power doubles approximately every two years (\emph{Moore's law}), you will eventually catch up with the problem.
-    The difficulty of exponential problems, on the other hand, grows so fast with input size that it vastly outpaces technological progress and how many resources you can throw at it.
-\end{techinfo}
-
-Python dictionaries are an implementation of hash tables, so we can improve the performance of our list model simply by switching to a different data structure.
-That requires only minor changes in the code.
-First, we change to curly braces to signal that we are constructing a dictionary.
-Then each item is assigned a unique key, for which we choose the underlying form posited by phonologists.
-%
-\begin{center}
-    \begin{pythoncode}
-        german_phonology = {'Ra:d':'Ra:t', 'Re:d@R':'Re:dV"',\
-            'blind':'blint', 'blind@':'blind@',\
-            'iC':'iC', 'du:':'du:', 'ER':'EV"',\
-            'si:':'si:', 'Es':'Es'}
-    \end{pythoncode}
-\end{center}
-
-But now that lookup is constant time thanks to the use of a dictionary we outperform the psycholinguistic reality that not all words are equally easy to retrieve.
-It is conceivable, though, that humans use a hash function that prioritizes quick retrieval of common items to the detriment of less frequent ones.
-After all, a hash function that takes one step on very frequent items and five steps on rare ones might be preferable to one that takes 3 steps for all of them.
-From the perspective of computational complexity the two are the same because $\BigO(1) = \BigO(3) = \BigO(5)$, but that does not preclude that one is noticeably faster than the other in practice, at least when run on \emph{wetware}, i.e.\ the human brain.
-Or maybe frequent words are stored in a faster type of memory (just like you might have your OS installed on an SSD while keeping your media files on a conventional hard drive).
-So let's graciously assume that this aspect of human performance can be modeled (and possibly explained) by the phonology list approach.
-
-\subsection{Memory Usage}
-
-The next question one might ask is whether it is feasible that humans do indeed store all words in their fully inflected forms.
-Remember that this is a crucial assumption for the model under discussion, which treats phonology as nothing more than an inventory of the well-formed outputs.
-We can do some rough estimates regarding memory usage.
-
-Let's make the conservative estimate that the speaker's language has 30 different phones (ignoring length differences). 
-So each sound in a word can be represented by a number between 0 and 29.
-For instance, \emph{Ra:t} may correspond to \emph{21 5 13}.
-How many bits does it take to store one of these numbers?
-%
-\begin{techinfo}[Binary Numbers]
+\begin{techinfo}[Binary numbers and bits]
     In daily life we use the \emph{decimal number system}.
     In this system, $53$ represents a number that we can analyze as $50 + 3 = (5 \mult 10) + (3 \mult 1) = (5 \mult 10^1) + (3 \mult 10^0)$.
     So in the decimal system, the digit in the $n$-th position acts as a multiplier for $10^{n-1}$, and we just sum the values encoded by each position of the number.
@@ -198,95 +115,60 @@ How many bits does it take to store one of these numbers?
     This system can of course be used with any other natural number as the base.
     The simplest case is the \emph{binary number system}, where the base is $2$.
     The number $5$, for instance, has the binary representation $101$ since $5 = (1 \mult 2^2) + (0 \mult 2^1) = (1 \mult 2^0)$.
-    And $53$ is written $110101$ (you do the math!).
-    Binary representations are important because each position has only two values, which can easily be instantiated in a physical system, for instance via the on and off states of a switch.
+    And $53$ is written $110101$, whereas $1100001$ is 97 (you do the math!).
+    So even though both numbers have two digits in decimal, one has 6 digits in binary and the other 7 digits.
+    A binary digit is also called a \emph{bit}.
+
+    Binary numbers are tremendously useful because they are strings of bits, and each bit can have only two values.
+    This means that each bit can be easily instantiated in a physical system, for instance via the on and off states of a switch, or the presence or absence of an electric current.
     That's exactly what computers do, and that's why computers ``only know zeros and ones'', as the tired old saying goes.
-    A binary digit is also called a \emph{bit}, which you probably know as the smallest unit of information.
-    So if you know how binary numbers work, you can actually calculate memory usage.
+    It is also why a single bit represents the smallest unit of information: the most basic distinction one can make is that between being in a specific state on the one hand, and not being in that state on the other hand.
+    This in turn also allows us to calculate memory usage: given a binary encoding of some piece of information, its memory usage equals the number of bits used for the encoding.
+
+    In our calculations above, we need 6 bits to encode the 64 phones because that is the smallest number of bits that allows us to make 64 distinctions.
+    With 5 bits, there's only $2^5 = 32$ distinct binary representations, which isn't enough.
+    If the language had 65 phones, we would need 7 bits per phone instead of 6.
+    There are ways to optimize binary encodings so that very frequent phones would have short bit representations than rare ones, but we will not go into this here.
+    We only want a rough approximation of memory usage, and the simple binary encoding explained here is sufficient for that.
 \end{techinfo}
 
-The highest number we need for our example is $29$ (that way we can order the 30 phones consecutively from $0$ to $29$).
-In binary this is represented as 11101, so each number (= sound) requires at most $5$ bits.
-We will take $3$ as the average number of bits that is needed per phone in an aribtrary word (assuming that some sounds are more common than others, a smart coding strategy could push this down quite a bit).
-We furthermore assume that the speaker's vocabulary contains about 20,000 words, which expands to about 50,000 fully inflected word forms, with an average word length of $8$.
-Hence we have 50,000 words that take $8 \mult 3$ bits on average.
-Overall then, we need $\frac{50000 \mult 8 \mult 3}{8 \mult 1024} \approx 146$ Kilobytes to store all these forms.
-To put this number into perspective, the collected works of Shakespeare take up about 25 times as much (2 to 5 Megabytes depending on character encoding) and fit on 1500 densely printed pages.
-\Note{The Vedic Sanskrit corpus, for instance, consists of over 1000 pages and despite being over 3000 years old, had not been written down until the first century BC.
-    For over a thousand years, it was preserved by a purely oral tradition that relied exclusively on memorization.
-    In fact, the oral tradition continued to dominate for the first millenium AD.
-}
-The phonology list model, then, would take up about 60 pages, which doesn't seem too outrageous --- humans are certainly capable of memorizing longer passages. 
+Given our (rather pessimistic) assumptions, the Listedness model of English phonology requires barely more than half a megabyte.
+This isn't all that much in the grand scheme of things.
+We could even consider more extreme examples. 
+The language Ubykh (extinct, Northwestern Caucasian) has 84 phonemes ($\approx$ underlying sounds).
+Even if we assume that each phoneme has two pronunciation variants, this leaves us with at most 172 different sounds and hence 8 bits per sound.
+Keeping all assumptions as before, the Listedness model would consume around 780 kilobytes, which is still less than one megabyte.
+To put this number into perspective, the collected works of Shakespeare take up about 5 times as much (depending on how they are encoded), and they fit on 1500 densely printed pages.
+If we put these numbers in direct correlation, we may say that the Listedness model only works if humans can memorize 300 pages of text.
 
-Things do not get much worse as the number of allophones increases.
-The language Ubykh (extinct, Northwestern Caucasian) has 84 consonant phonemes, but only 2 phonemic vowels.
-Ignoring allophones, we need numbers between 0 and 85 to identify each phoneme, which implies an increase in the maximum number of bits per sound to 7, so with an average of 6 bits (a very pessimistic estimate) we would end up using 292 Kilobytes, or 111 pages.
-Even if every phoneme has two allophones and no phone is an allophone for more than one phoneme, we have at most 172 different sounds, which fits comfortably within 8 bits; assuming an average of 7 bits per phone, the whole phonology list would take up a mere 341 Kilobytes.
+This may seem ludicrous, but human memory is capable of some surprising feats.
+The Vedic Sanskrit corpus, for instance, consists of over 1000 pages and despite being over 3000 years old, wasn't written down until the first century BC.
+For over a thousand years, it was preserved by a purely oral tradition that relied exclusively on memorization.
+That requires a lot of storage capacity.
+Of course this isn't a perfect comparison: oral traditions rely on elaborate memorization techniques, the memorization is done by adults and not by infants acquiring the language of their environment, and so on.
+But if memorizing 1000 pages is feasible, it is far from obvious that the Listedness model exceeds human storage capacities.
 
-As you can see, the number of representable phones increases exponentially with the number of bits, and the overall memory usage depends only on the number of bits. 
-So a linear increase in the size of the sound inventory causes only a logarithmic increase in the amount of memory consumed by the phonology list.
-Compared to the size of the lexicon and the average word length, the number of sounds in a language is a negligible factor.
+If you worked through section~\ref{ssec:formal_code_search} on linear and binary search in Chapter~\ref{cha:Formal}, then you might have another objection.
+The longer the list, the longer it should take to retrieve pronunciations, and as speakers with a large vocabulary do not take longer to retrieve pronunciations compared to those with a small vocabulary, the Listedness model is not a plausible model of human phonology.
+Once again there is a lot one could quibble with here, but let us get straight to the main problem with this argument as well as the previous one: the Listedness model is a claim about how the speaker's knowledge is specified, not how it is implemented. 
 
-\subsection{Prefix Trees}
+The Listedness model does not claim that humans have a literal list of pronunciations in their head.
+There's many different ways a list can be implemented, be it a singly-linked list, a doubly-linked list, a hash table, or a prefix tree (see XXX).
+% fixme: section reference
+Some of them circumvent all the problems of storage and retrieval pointed out above.
+Even if they didn't, there might be some neural data structure that computer scientists are unaware of that allows humans to store very long lists in a very efficient manner.
+Criticizing the Listedness model because lists would be a suboptimal data structure is a category mistake.
+The model is meant as a high-level description of phonological knowledge, not how this knowledge is stored and queried in the human mind.
+If we want to argue against the Listedness model, we have to show that its notion of phonological knowledge is inadequate.
 
-The storage requirements we just computed only take into account the output forms, not the keys and the (negligible) hash function, which are also an essential part of a hash table.
-With no further optimizations, the keys will double the memory usage.
-The keys we use, though, have the property that many of them are very similar.
-For instance, the keys \emph{blind} and \emph{blind@} are almost exactly the same.
-The latter is an extension of the former, or the other way round, \emph{blind} is a \emph{prefix} of \emph{blind@}.
-%
-\begin{definition}[Prefix]
-    Given strings $u$ and $w$, $u$ is a \emph{prefix} of $w$ iff there is some (possibly empty) string $v$ such that $w$ is the concatenation of $u$ and $v$.
-\end{definition}
-%
-Keep in mind that this usage of prefix has nothing to do with its linguistic meaning as an affix that precedes the stem of a word.
-Furthermore, since $v$ in the definition is allowed to be empty, i.e.\ a string that contains no symbols whatsoever, every string is its own prefix.
-For instance, the prefixes of \emph{blinde} are \emph{b}, \emph{bl}, \emph{bli}, \emph{blin}, \emph{blind}, and \emph{blinde} itself.
+\subsection{Phonological knowledge is more than memorization}
+\label{ssec:listphonology_inadequacy_knowledge}
 
-Considering that our phonology list consists of fully inflected output forms and that inflectional morphology in many languages involves a fair share of suffixation,  it is very likely that the keys in the phonology list of a given language show a great amount of overlap.
-This allows us to represent them in a more memory efficient way via a \emph{prefix tree} (also called \emph{trie}) like the one below.
-%
-\begin{center}
-    \input{./img/tikz/PhonologyList_PrefixTree.tex}
-\end{center}
-%
-Nodes in red represent specific keys.
-For instance, the red node labeled $2$ corresponds to the key \emph{blind}, for if we follow the path from the root to this node, the branches spell out b-l-i-n-d.
-The node is labeled $2$ because that is the index of the entry with key \emph{blind}.
-If we move one branch further down we get the key \emph{blind@}, which references the item with index $3$.
-Notice that since the tree already encodes the key \emph{blind@}, we already have all the nodes and branches that are required to encode \emph{blind}.
-Thus the addition of this key only requires 2 more bits, which are used to link the corresponding node to the index $2$ (remember, $2$ is $10$ in binary).
-If the keys were stored independently of each other, then \emph{blind} would be one among $n$ elements, where $n$ is the number of items in the phonology list.
-Our toy example has 9 different elements, so we would need $4$ bits to uniquely identify \emph{blind} ($9$ is $1000$ in binary).
-If there's 20,000 different keys, we would need $15$ bits.
-This shows that representing one key as a prefix of another one can save us a lot of memory via structure sharing.
-
-The prefix tree also renders the hash function obsolete as it already encodes the mapping from keys to indices.
-A prefix tree thus is a viable alternative to a hash table that saves quite a bit of memory as long as the majority of keys have common prefixes.
-%fixme: it also gets around certain shortcoming of hash tables
-Actually this is not the case in our toy example, where we find many unary branching nodes that do not correspond to list indices, and this has some unfortunate consequences for memory usage.
-For a single key like \emph{du}, which shares no prefixes with any other keys, the prefix trees has to reserve memory for the characters \emph{d}, \emph{u}, and \emph{:} which are found along the path to the corresponding index.
-In the standard ASCII encoding, that's 7 bits per character, and in UTF-16 it would be 16 bits per character.
-Remember that the hash function needs at most $4$ bits for \emph{du:} because it treats the key as one among 9 atomic symbols.
-The prefix tree decomposes the keys into sequences of characters, so now we have to reserve $7 \mult 3 = 21$ or possibly even $16 \mult 3 = 48$ bits for the same key.
-This is a general problem with prefix trees: they are only memory efficient if many keys share common suffixes, or equivalently, if most nodes in the tree are at least binary branching.
-
-We can somewhat mitigate the problem by truncating sequences of unary branches into a single branch, yielding a \emph{compacted prefix tree} (also known as \emph{radix trie}).
-%
-\begin{center}
-    \input{./img/tikz/PhonologyList_RadixTree.tex}
-\end{center}
-
-Overall, it seems than an algorithmically sophisticated implementation of the phonology list model could attain some degree of psycholinguistic plausibility with respect to memory usage and retrieval speed.
-As we will see next, though, the phonology list model fails miserably at the computational level.
-
-
-\section{Computational Properties Missed by the List Model}
-
-If phonology is just a list of output forms, we predict several properties to hold of natural languages:
+The Listedness model claims that phonology is just a list of licit output forms that the speaker has memorized over the years.
+If this is correct, then several properties should hold of the phonological systems we find in natural languages:
 %
 \begin{itemize}
-    \item \textbf{Free Typology}\\
+    \item \textbf{Free typology}\\
         Since there are no restrictions on what items may occur in a list, any given list of output forms is a possible phonological system.
         %
     \item \textbf{Defeat by the unknown}\\
@@ -301,60 +183,83 @@ If phonology is just a list of output forms, we predict several properties to ho
         %
     \item \textbf{Egalitarianism}\\
         All phonological forms are equally easy to learn because they simply involve memorization.
-        If there are differences at all, they should be between short words and long words.
-        %
 \end{itemize}
 %
-None of these properties hold of natural language phonology.
+These predictions are maximally wrong.
+There isn't a single known language where at least one of those properties holds.
 
-Contrary to Free Typology, there are obvious typological regularities that hold across languages.
-For instance, languages obey a principle of \emph{vowel dispersion}: the size of the vowel inventory is a rough predictor of which vowels will not occur in this language.
-So if a language has only three vowels, odds are high that they will be close to the three cardinal vowels \textipa{a}, \textipa{i}, and \textipa{u}, and it is absolutely certain that they will not be \textipa{i}, \textipa{y}, and \textipa{Y}.
-There's also an infinite number of easily formulated principles that are not obeyed by a single language, such as ``if the number of vowels in the word is a multiple of $3$, they must all be \textipa{a}'', or ``a word contains more than four phones only if it is a palindrome'', or ``the number of bits used for the ASCII encoding of the word is greater than 17''.
-Yet we can easily write lists that satisfy these conditions.
+Contrary to \emph{Free typology}, languages are not only systematic, they are systematic in very specific ways.
+There's an infinite number of easily formulated principles that could be expressed in terms of a list yet are never found in any natural language.
+One might be
+``if the number of vowels in the word is a multiple of $3$, then all vowels must be \textipa{a}'',
+or
+``a word contains more than four phones only if it is a palindrome'', or
+``if each consonant counts for 1 point and each vowel doubles the point total of the preceding consonants, then every word must be worth at least 17 points''.
+We could even have conditions that reference the length of the list, e.g.
+``if the list has less than 20,000 words, then all vowels must be \textipa{a}``.
+We can write lists that obey these highly unnatural constraints (or their opposite, or arbitrary combinations thereof), and these lists are predicted to be possible phonological systems that we should find in some language.
 
-It is also obvious that native speakers do have intuitions about the pronunciation of nonce words, and this has also been verified in a myriad of experiments using \emph{wug} tests.
+\emph{Defeat by the unknown} is also untenable.
+Native speakers do have intuitions about the pronunciation of nonce words, and this has also been verified in a myriad of experiments using \emph{wug} tests.
 In a \emph{wug} test, the test subject is presented with a made-up word and asked to determine its pronunciation.
 The experimenter may show the subject a drawing of a bird and tell them that this bird is called a \textipa{[w2g]}.
 The experimenter then reveals a picture with two wugs and asks the test subject to complete the sentence ``On this picture, there are two\ldots''.
 A native speaker of English will realize that the plural \emph{wugs} is pronounced \textipa{[w2gz]} rather than \textipa{[w2gs]} because the voicing of the plural morpheme is dependent on the preceding sound.
 A similar experiment could be performed to test German speaker's knowledge of final devoicing: the subject is first told the plural \textipa{[vag@]}, from which they should correctly infer that the singular is not \textipa{[vag]} but \textipa{[vak]}. 
 
-Isolationism does not hold, either.
+\emph{Isolationism} does not hold, either.
 For example, \emph{phone bill} is often pronounced like \emph{foam bill} in rapid speech, and \emph{white board} may actually sound like \emph{wipe board}.
 Here the pronunciation of the last sound of the first word is partially assimilated to the first sound of the following word: the alveolar nasal \textipa{[n]} is changed to the bilabial nasal \textipa{[m]} because \textipa{[b]} is bilabial, while the alveolar plosive \textipa{[t]} becomes the bilabial plosive \textipa{[p]} in this context.
 % fixme: thanks to Ellen Broselow for these examples
-The only way this could be handled in the list model is by treating these words as compounds with their own entries.
-But \emph{white board} is not necessarily a compound (we may just be talking about some kind of board that happens to be white), so that is hardly satisfying.
-Alternatively, we could add context information to every pronunciation, but that would increase the memory demands of the model quite a bit, and it also constitutes a step towards a more complicated model, so we will hold off on that for now.
+The only way this could be handled in the list model is by listing sequences of words, rather than just individual words.
+But this would only exacerbate the other problems.
+Such a model could, for example, require that the number of vowels in a word must exceed the number of vowels in the previous word.
+The only way to address Isolationism in the Listedness model is to make it perform even worse with respect to the other properties.
 
-The suggested fix of treating certain word combinations as compounds with their own entry is actually instructive in that it shows why natural languages do not have a finite vocabulary.
+\emph{Finiteness} is a more subtle point because it goes beyond the pure empirical facts and invokes an additional methodological principle.
 Take a simple expression like \emph{great grandfather}.
-Using various linguistic tests one can show that it is not a phrase, and since \textsc{i}) it is usually assumed that if a multi-word expression isn't a phrase, it must be a compound, and \textsc{ii}) compounds are still words, the phonology list should include an entry for \emph{great grandfather}.
+Using various linguistic tests one can show that it is not a phrase.
+It is usually assumed that if a multi-word expression isn't a phrase, it must be a compound, and compounds are still words as far as phonology is concerned.
+Hence the phonology list should include an entry for \emph{great grandfather}.
 But then it must also contain an entry \emph{great great grandfather}, \emph{great great great grandfather}, and so on.
-In general, native speakers know exactly how to pronounce \emph{great\tsb{n} grandfather} for any arbitrary choice of $n$, so if phonology is only a list of pronunciations, it must be an extremely large list that contains pronunciations for such high values of $n$ that nobody could ever reach the limit within their life span.
-But a list that is this large may just as well be considered to be infinite --- it certainly isn't feasible to write such a list by hand, and it is unclear how a native speaker could have acquired such a list if phonology is just memorization of output forms.
+In general, native speakers know exactly how to pronounce \emph{great\tsp{n} grandfather}, even for very high values of $n$.
+Now, strictly speaking, we cannot rule out that there is a finite cut-off point for $n$ --- say, 3 trillion --- where native speakers suddenly don't know how to pronounce \emph{great\tsp{n} grandfather}.
+There is no way to test this experimentally.
+If such a cutoff point exists, though, it must be fairly large.
+But the larger the cutoff point, the larger the list and the harder it is to work with and reason over.
+It is more convenient and insightful to assume that there is no finite cut-off point if that allows for a more compact and succinct description.
 
-Speaking of acquisition, it is also a fact that speakers have a harder time with certain pronunciations than with others.
-The simplest example are tongue twisters of course, although it is unclear whether the challenge stems from phonological idiosyncrasies or is simply articulatory in nature.
-A different example involves pronunciation shifts.
+This leaves us with \emph{egalitarianism}, which is at odds with language change.
 For example, \emph{biopic} (= biographic picture) used to be pronounced with primary stress on the \emph{i}, similar to \emph{bioinformatics} or \emph{bio-degradable}.
 In recent years, however, more and more speakers have switched to a pronunciation with primary stress on the \emph{o}, apparently in an analogy to \emph{myopic}.
 If phonology is just a memorized list, it is unclear what the motivation for this change could be, any form is as good as the next.
 
-Playing devil's advocate, one may propose that all these properties of natural language need not be explained by the list model of phonology since they could be due to the learning algorithm.
+In a nutshell, the problem with the Listedness approach is that it fails to recognize the systematic nature of phonology.
+Any random, haphazard assortment of pronunciations should be a possible phonological system, but instead we find that phonology is largely driven by generalizations.
+Generalizations about what is a possible constraint on pronunciations,
+generalizations to nonce forms that have never been heard before,
+generalizations that apply across multiple words in a sentence,
+generalizations that may even apply to an infinite number of words that will never be uttered,
+generalizations that eradicate existing outliers to make phonology even more systematic.
+Once we contrast phonology against all logically conceivable options, it reveals itself to be driven by a narrowly circumscribed set of generalization mechanisms.
+
+Playing devil's advocate, one may propose that this propensity for generalization need not be explained by the Listedness model because they could be due to the learning algorithm that produces the list of pronuncations.
 We do not see free typological variation because the learning algorithm will only entertain specific ways of inferring a phonology list from the input data.
 The phonology list need not be able to determine new pronunciations because the learning algorithm can take care of that based on some probabilistic metrics.
 Finiteness is not an issue because the learning algorithm can dynamically add new words to the list whenever they are needed.
-And egalitarianism does not hold because the learning algorithm can be structured in a way such that certain pronunciations are more preferable to others, e.g.\ by reducing the entropy of the list ($\approx$ the amount of idiosyncratic information that cannot be derived from more basic principles).
+And egalitarianism does not hold because the learning algorithm can be structured in a way such that certain pronunciations are more preferable to others, e.g.\ by reducing the amount of idiosyncratic information that cannot be derived from more basic principles.
 
-But adopting this stance is no different from admitting defeat.
-Keep in mind that a learner that accounts for all these properties is much more complex than the simplest learner for the list phonology model, namely the one that simply adds new pronunciations to a list.
-The move towards a more complex learner is necessary because this maximally simple model fails miserably.
-We need a more complicated model, and for this purpose it does not matter whether we put the complexity in the grammar formalism or the learner, without a good understanding of whether one of the two is better suited for certain purposes it is irrelevant which component takes care of which job.
-For now, we want to know how these additional properties of natural language phonology can be characterized on the computational level, not how they are distributed over grammar and learning algorithm.
-The easiest way of doing this is to once again start out with the simplest model where all the work is done by one component, and since we already have a grammar component in place, we should first see if a more elaborate grammar model can solve these issues. 
-
+But the position of the devil's advocate is tantamount to admitting defeat.
+The goal was to present a maximally simple model of phonology.
+Combining a simple model of phonology with a complex learning model for phonology does not magically yield a simple model.
+The complexity is still there, but it has been pushed into the learner instead of the grammar.
+That's just window dressing.
+The bottom line is that we need a more complicated model than what we started out with in this section.
+For this purpose it does not matter whether we put the complexity in the grammar formalism or the learner;
+at this point, we do not even know whether there is a meaningful difference between the two.
+Rather than complicating the picture by having both a grammar and learner, we should stick with one component.
+And since it makes no sense to have a learning algorithm without a grammar that ends up being learned, we will stick with grammars.
+Not much has changed, then: the simplest conceivable model has failed to capture the systematicity of phonology, so we have to find something slightly more complex that allows for phonological generalizations.
 
 % hw
     % draw prefixtree
@@ -368,6 +273,327 @@ The easiest way of doing this is to once again start out with the simplest model
         % list of all logically possible IP addresses
         % list of all IP addresses on a given network
 
+\section{Summary}
+\label{sec:listphonology_summary}
+
+\begin{insights}
+    \begin{itemize}
+        \item Phonology is the rule system that controls the sounds of a natural language.
+        \item The Listedness model claims that a speaker's phonological knowledge can be adequately described as a finite list of licit, memorized pronunciations.
+        \item A naive implementation of the model in terms of lists might not be cognitively plausible.
+              But this is not a valid counterargument because the model's task is to describe phonological knowledge, not how this knowledge is actually encoded in the human mind.
+              Alternative data structures are available that address many of the shortcomings of lists.
+        \item The main problem of the Listedness model is that cannot explain why phonology is so systematic and ripe with generalizations.
+    \end{itemize}
+\end{insights}
+
 \begin{literature}
-add more info
+add more info:
+phonology survey papers and textbooks;
+argument about finiteness;
+
+Experiments have shown that frequent words are retrieved more quickly than rarer ones, but the retrieval speed is independent of overall vocabulary size (see \citealt{Jurafsky03} and references therein).
+Having a larger vocabulary does not mean that it takes you longer to retrieve specific words.
+
+This is a very simplified presentation of hash tables, see Sec.~1.5 of~\citet{DasguptaEtAl06} for some very useful details.
 \end{literature}
+
+\begin{programming}
+\label{sec:listphonology_code}
+
+\subsection{Different types of lists}
+\label{ssec:listphonology_code_lists}
+
+As mentioned in section~\ref{ssec:listphonology_inadequacy_storage}, the Listedness model does not propose a concrete implementation of the purported list of pronunciations.
+In fact, even if one were to interpret it literally as postulating some kind of mental list of pronunciations, that would leave a lot of wiggle room for different implementations because there are many different types of lists.
+
+Two of the most basic types of lists are \emph{singly-linked lists} and \emph{doubly-linked lists}, and those two differ in several respects. 
+A singly-linked list is an unordered collection of data points where each data point also contains a reference to the data point that is next in the list.
+Yes, you read that right, a list starts out as unordered and obtains its order only through additional references that link those data points together.
+A concrete example in the form of a Python dictionary might make this clearer.
+%
+\begin{center}
+\begin{pythoncode}
+    # a dictionary that implements a singly-linked list
+    singly_list = {
+        'start': 0,
+        0: {'data': 'This',
+            'next': 3},
+        1: {'data': 'end',
+            'next': None},
+        2: {'data': 'the',
+            'next': 1},
+        3: {'data': 'is',
+            'next': 2},
+    }
+
+    # let's print the list from beginning to end
+    current = singly_list.get('start')
+    while current is not None:
+        # print current data point, then move on to next
+        print(singly_list[current].get('data'))
+        current = singly_list[current].get('next')
+
+    >>> 'This'
+    >>> 'is'
+    >>> 'the'
+    >>> 'end'
+\end{pythoncode}
+\end{center}
+%
+While it is tempting to interpret the keys $0$, $1$, $2$ and $3$ as encoding the linear order of the list, that's not quite right.
+If we ordered the data points based on their key from smallest to largest, we would get \emph{This end the is}, but the intended order is \emph{This is the end}.
+The list order arises indirectly from the use of the \emph{next} field.
+If we had used symbols like $\bullet$ and $\Box$ for the keys instead of numbers, the linear order of the items in the list would still be the same.
+The linear order of a singly-linked list arises only from the \emph{next} field, and nothing else.
+
+In a doubly-linked list, the \emph{next} field is supplemented by a \emph{previous} field.
+%
+\begin{center}
+\begin{pythoncode}
+    # a dictionary that implements a doubly-linked list
+    doubly_list = {
+        'start': 0,
+        'end': 1,
+        0: {'data': 'This',
+            'next': 3,
+            'previous': None},
+        1: {'data': 'end',
+            'next': None,
+            'previous': 2},
+        2: {'data': 'the',
+            'next': 1,
+            'previous': 3},
+        3: {'data': 'is',
+            'next': 2,
+            'previous': 0},
+    }
+
+    # let's print the list from beginning to end
+    current = doubly_list.get('start')
+    while current is not None:
+        # print current data point, then move on to next
+        print(doubly_list[current].get('data'))
+        current = doubly_list[current].get('next')
+
+    # and then from the end to the beginning
+    current = doubly_list.get('end')
+    while current is not None:
+        # print current data point, then move on to next
+        print(doubly_list[current].get('data'))
+        current = doubly_list[current].get('previous')
+
+    >>> 'This'
+    >>> 'is'
+    >>> 'the'
+    >>> 'end'
+    >>> 'end'
+    >>> 'the'
+    >>> 'is'
+    >>> 'This'
+\end{pythoncode}
+\end{center}
+
+While it looks like doubly-linked lists don't add much to singly-linked ones, they actually have very different properties.
+Suppose that we want to insert \emph{gruesome} before \emph{end} (key $1$).
+In a doubly linked list, this is a quick procedure because we know that the data point before \emph{end} is \emph{the} (key $2$).
+So we create a new key $4$ to hold \emph{gruesome} and insert it between \emph{the} and \emph{end}:
+%
+\begin{enumerate}
+    \item point \emph{next} for \emph{the} at \emph{gruesome} (key $4$), 
+    \item point \emph{previous} for \emph{gruesome} at \emph{the} (key $2$),
+    \item point \emph{next} for \emph{gruesome} at \emph{end} (key $1$),
+    \item point \emph{previous} for \emph{end} at \emph{gruesome} (key $4$).
+\end{enumerate}
+%
+No matter how long the doubly-linked list is, inserting a new element always takes four steps and hence \term{constant time}.
+
+Now contrast to a singly linked list.
+Here the procedure is exactly the same, except that we have no easy way of telling which data point occurs before \emph{end}.
+As a result we have to search through the entire list until we find a data point whose \emph{next} value points at \emph{end}.
+In the worst case scenario, finding this item takes $n-1$ steps in a list with $n$ items.
+The cost of insertion grows linearly with the length of the list.
+One also says that inserting an item into a linked list takes \term{linear time}.
+In mathematical notation, inserting an item runs in $\BigO(1)$ for doubly-linked lists but $\BigO(n)$ for singly-linked lists.
+
+\begin{techinfo}[Asymptotic notation]
+    Computer scientists measure performance in terms of \emph{asymptotic worst-case complexity}.
+    That is to say, how long does it take to solve a given task if everything goes wrong that could go wrong within the specified parameters of the problem (e.g.\ the item we are looking for is at the very end of the list) and if there are no restrictions on the size of the input (e.g.\ there is no limit on how many items a list may contain).
+
+    Asymptotic worst-case complexity is expressed via the ``Big $\BigO$'' notation.
+    If an algorithm has time complexity $\BigO(n^3)$, this means that it takes at most $n^3$ steps for it to find a solution (or determine that there is no solution), where $n$ is the size of the input problem (e.g.\ the number of items in a list).
+    The Big $O$ notation ignores parameters whose impact on complexity diminishes as the size of the problem approaches infinity.
+    For instance, when running a search algorithm you wrote in Python there is a fixed cost for reading in the actual code you wrote.
+    But since this only takes a fixed amount of steps, say $5$, that cost is completely negligible once we deal with lists containing millions of items --- it does not matter whether your computer has to do 3 million computations or 3 million and $5$.
+
+    Without going into too much detail, we can rank an algorithm's efficiency according to which of the following classes it belongs to:
+    %
+    \begin{description}
+        \item[constant]
+            solving the problem always takes a fixed number of steps\\
+            e.g.\ $\BigO(5) = \BigO(1)$
+        \item[logarithmic]
+            the amount of time is logarithmically bounded by the size of the input\\
+            e.g.\ $\BigO(2 \log n + 5) = \BigO(2 \log n) = \BigO(\log n)$
+        \item[linear]
+            the amount of time scales linearly with the size of the input\\
+            e.g.\ $\BigO(5n \log n + 5) = \BigO(5n) = \BigO(n)$
+        \item[polynomial]
+            the amount of time is bounded by a polynomial of the input (in simpler terms: a function where $n$ has an exponent)\\
+            e.g.\ $\BigO(8n^4 + 3n^2 + 5n \log n + 5) = \BigO(8n^4) = \BigO(n^4)$
+        \item[exponential]
+            the amount of time grows exponentially with input size\\
+            e.g.\ $\BigO(4^n + 2^n + 8n^4 + 3n^2 + 5n \log n + 5) = \BigO(4^n)$
+        \item[factorial]
+            the amount of time grows factorially with the input, where the factorial of $n$ is $n! \is n \mult (n - 1) \mult \cdots \mult 2 \mult 1$ (for instance, $4! = 4 \mult 3 \mult 2 \mult 1$)\\
+            e.g.\ $\BigO(8n! \mult n^{10^{100}}) = \BigO(8n!) = \BigO(n!)$
+    \end{description}
+    %
+    In practice, problems that can be solved in polynomial time are considered efficiently solvable.
+    In the worst case, you may have to wait a few years for hardware to catch up, but since computing power doubles approximately every two years (\emph{Moore's law}), you will eventually catch up with the problem.
+    The difficulty of exponential problems, on the other hand, grows so fast with input size that it vastly outpaces technological progress and how many resources you can throw at it.
+\end{techinfo}
+
+This short excursion into data structures shows that there is uniform notion of lists when it comes to implementations.
+The list in the Listedness model is just a convenient abstraction and simplification with no commitments about how such a list might be implemented.
+Criticizing it for its storage cost or retrieval speed misses the point.
+In Marrian terms, the Listedness model operates at the computational level, not the algorithmic one, so we can't use algorithmic concerns to debunk it.
+And as we will see in the next section, there are efficient list implementations that sidestep the storage and retrieval issues.
+
+By the way, if you're wondering whether Python's list are singly-linked or doubly-linked, the answer is neither: Python's lists are implemented as \term{dynamic arrays}, which is yet another data structure with very specific advantages and disadvantages.
+The possibilities truly are endless.
+
+\subsection{Hash tables for efficient retrieval}
+\label{ssec:listphonology_code_hashmaps}
+
+% Let's first think about whether speakers could possibly have such a list stored somewhere in their brain.
+% Psychologists and neuroscientists still know very little about how the brain stores information, so for the sake of argument we will look at this through the lens of Python data structures.
+% Python has lists as a data type, so we could instantiate a phonology list for a given language, say German.
+% %
+% \Note{This list 
+% %
+% %
+% The problem is that items in a list are not always easy to retrieve.
+% If you know the index of an item, you can immediately access it via said index.
+% %
+% %
+% But with long lists you do not know which position a specific item occupies.
+% In order to retrieve this item, then, one has to search through the entire list until one finds the correct item.
+% So the longer the list, the longer it takes to find an item towards its end.
+% If we simply search through the list from left to right, finding the $n$-th item takes $n$ steps.
+% There are more efficient methods such as the binary search algorithm that we looked at in Lecture~\ref{cha:Formal}, but with those the search time still increases with the size of the list, just not as rapidly.
+
+Quick access and storage of information is crucial in various applications, and thus it is no surprise that computer scientists have developed data structures which allow any given item to be stored and retrieved in constant time.
+A particularly popular one is the \emph{hash table} or \emph{hash map}.
+
+The basic idea behind a hash table is that the problem with lists is the arbitrary and volatile connection between an item in a list and its key.
+Consider the example of a Python list below (remember, Python lists are dynamic arrays and hence have nothing to do with the singly-linked or doubly-linked lists we just encountered).
+The example uses the \href{http://www.kirshenbaum.net/IPA/ascii-ipa.pdf}{sci.lang ASCII transliteration} of IPA, which is easier to type and can be used on systems without support for Unicode.
+%
+\begin{center}
+\begin{pythoncode}
+    german_phonology = ['Ra:t', 'Re:dV"', 'blint', 'blind@',\
+                        'iC', 'du:', 'EV"', 'si:', 'Es']
+\end{pythoncode}
+\end{center}
+%
+As you probably know, elements of a Python lists can be retrieved instantaneously if their position in the list is already known.
+%
+\begin{center}
+\begin{pythoncode}
+    # this list look-up runs in constant time
+    german_phonology[4]
+    >>> 'iC'
+\end{pythoncode}
+\end{center}
+%
+But if you do not know the index of an item, you have to search through the list to find the item, and that is slow --- linear search takes linear time, whereas binary search runs in logarithmic time but only works for sorted lists.
+If there were a way to compute the position of an item without searching through the list, we could always use indices to retrieve items from a Python list.
+This would allow constant time retrieval for all items, and that is exactly what hash tables were designed for.
+
+In a hash table, each entry has a key that uniquely identifies it, and this key is translated into the correct index via a \emph{hash function}.
+So in a sense a hash table is a list that is equipped with a mechanism for quickly computing every item's position in the list without ever searching through the list.
+If item $i$ has key $k$, then the hash function will convert $k$ to the position where $i$ occurs in the underlying list and retrieve $i$ from this position.
+A smart hash function can do this conversion from keys to positions in constant time for any given key irrespective of how many keys there are or how long they are --- the conversion from indices to keys always takes a fixed number of steps.
+It follows that lookup in hash table takes constant time, much more efficient than the linear time lookup in a list.
+
+Hash tables are ubiquitous in modern programming.
+Python dictionaries are an instance of hash tables.
+Python sets are a subtype of hash tables where every item is also its own key.
+But what is the cognitive status of hash tables?
+Would the Listedness model be more plausible if it used a hash table instead of a list?
+
+Our understanding of the human mind is too limited to say for sure.
+As lookup in hash tables takes constant time instead of linear time, speakers with larger vocabularies would no longer be predicted to have slower retrieval speeds.
+But a hash table might be too efficient in light of the psycholinguistic reality that not all words are equally easy to retrieve.
+It is conceivable, though, that humans use a hash function that prioritizes quick retrieval of common items to the detriment of less frequent ones.
+After all, a hash function that takes one step on very frequent items and five steps on rare ones might be preferable to one that takes 3 steps for all of them.
+From the perspective of computational complexity the two are the same because $\BigO(1) = \BigO(3) = \BigO(5)$, but that does not preclude that one is noticeably faster than the other in practice, at least when run on \emph{wetware}, i.e.\ the human brain.
+Or maybe frequent words are stored in a faster type of memory (just like you might have your OS installed on an SSD while keeping your media files on a conventional hard drive).
+Or maybe the memory architecture of the human brain is so fundamentally different from anything else we know that the very notion of hash tables does not make any sense.
+Once again the level of algorithmic implementation furnishes so many knobs and parameters to tune that it is difficult to draw any firm conclusions either way.
+
+
+\subsection{Prefix trees for compact storage}
+\label{ssec:listphonology_code_prefixtrees}
+
+The cognitive argument against the Listedness model also pointed out the storage needs of large lists.
+But this does not take into account that many items in the list would look very similar, which allows us to represent the list more compactly as a \term{prefix tree}.
+For the sake of simplicity, the following discussion will use English orthography instead of phonetic transcriptions.
+
+Consider two English words like \word{ban} and \word{banana}.
+The latter is an extension of the former, or the other way round, \word{ban} is a \term{prefix} of \word{banana}.
+And \word{ban} is also a prefix of \word{bandana}, making it a common prefix of \word{banana} and \word{bandana}.
+This usage of prefix has nothing to do with its linguistic meaning as an affix that precedes the stem of a word.
+Given a string $w$, any initial substring of $w$ is a prefix of $w$, including the empty string $\emptystring$ and $w$ itself.
+%
+\begin{examplebox}[Prefixes of strings]
+    All of the following are prefixes of \word{band}:
+    %
+    \begin{enumerate}
+        \item $\emptystring$,
+        \item \emph{b},
+        \item \emph{ba},
+        \item \emph{ban},
+        \item \emph{band}
+    \end{enumerate}
+    %
+    But \emph{bard} is not a prefix of \emph{band}.
+\end{examplebox}
+%
+Large lists where many items share a common prefix can be represented more efficiently via a \emph{prefix tree} (also called \emph{trie}).
+fixme: change tree
+%
+\begin{center}
+    \input{./img/tikz/PhonologyList_PrefixTree.tex}
+\end{center}
+%
+Blue circles indicate non-final nodes, whereas the red square represent final nodes.
+Every path from the root down to final node corresponds to a specific item in the list.
+For instance, the red node labeled $2$ corresponds to \emph{blind} as the branches along this path spell out b-l-i-n-d.
+If we move one branch further down we get the item \emph{blind@}.
+Notice that the cost of storing both \emph{blind} and \emph{blind@} is almost exactly the same as storing both of them thanks to the large amounts of structure sharing.
+In many cases, adding a new item may only require changing a node from non-final to final, which only requires changing a single bit from 0 to 1 and comes with no extra memory cost.
+
+Prefix trees also offer fast retrieval without the need for a hash function.
+In order to determine if some item $i$ is in the list, one does not need to search through the entire tree.
+Instead, it is sufficient to check if the path described by $i$ ends in a final node.
+This takes as many steps as there are symbols in $i$.
+Technically this makes the look-up linear time.
+But the look-up time scales linearly with the length of the item $i$, and the items in a list tend to be much shorter than the list itself.
+So short, in fact, that look-up is effectively done in constant time.
+
+Prefix trees are a wonderful data structure for lists where many items share common prefixes.
+For sparse lists with very little overlap between items, they might not be worth the memory overhead of labeled branches, nodes, and which nodes are final.
+We can somewhat mitigate the problem by truncating sequences of unary branches into a single branch, yielding a \emph{compacted prefix tree} (also known as \emph{radix trie}).
+%
+\begin{center}
+    \input{./img/tikz/PhonologyList_RadixTree.tex}
+\end{center}
+
+For vocabulary lists, which tend to have lots of common prefixes between items, prefix trees combine efficient storage with fast search.
+Hence it is not true that the Listedness model necessarily commits us to unrealistic assumptions about human memory capacity and retrieval speeds.
+But there is also precious little evidence that the human brain uses anything resembling prefix trees.
+As has been stated multiple times before in this chapter, such algorithmic issues are very hard to evaluate, in particular compared to the questions that arise at the computational level.
+The latter provides much more solid footing, so we would do well to stick with it as much as possible.
+\end{programming}
