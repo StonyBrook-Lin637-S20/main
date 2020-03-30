@@ -2,18 +2,18 @@ Computational Linguistics 2 (Revised syllabus)
 ==============================================
 
 
-| Course        | Info                                       |
-| --:           | :--                                        |
-| Course#       | lin637                                     |
-| Time          | T/R 2:30--3:50pm                           |
-| Location      | Zoom (<lin637.thomasgraf.net/zoom>)        |
-| Website       | <lin637.thomasgraf.net>                    |
-|               |                                            |
-| Instructor    | Thomas Graf                                |
-| Email         | <t.graf@stonybrook.edu>                    |
-| Office hours  | T 1:00--2:30                               |
-|               | R 1:00--2:30                               |
-| Office        | Zoom (<http://officehours.thomasgraf.net>) |
+| Course        | Info                                        |
+| --:           | :--                                         |
+| Course#       | lin637                                      |
+| Time          | T/R 2:30--3:50pm                            |
+| Location      | Zoom (<https://lin637.thomasgraf.net/zoom>) |
+| Website       | <lin637.thomasgraf.net>                     |
+|               |                                             |
+| Instructor    | Thomas Graf                                 |
+| Email         | <t.graf@stonybrook.edu>                     |
+| Office hours  | T 1:00--2:30                                |
+|               | R 1:00--2:30                                |
+| Office        | Zoom (<https://officehours.thomasgraf.net>) |
 
 **If you cannot reach your instructor, please email <cas_dean@stonybrook.edu>**
 
